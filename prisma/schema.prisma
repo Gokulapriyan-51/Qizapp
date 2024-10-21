@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model options {
+  id              Int               @id @default(autoincrement())
+  question_id     Int?
+  option_text     String            @db.Text
+  is_correct      Boolean?
+  questions       questions?        @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "options_ibfk_1")
+  student_answers student_answers[]
+
+  @@index([question_id], map: "question_id")
+}
+
+model questions {
+  id              Int               @id @default(autoincrement())
+  quiz_id         Int?
+  question_text   String            @db.Text
+  options         options[]
+  quizzes         quizzes?          @relation(fields: [quiz_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "questions_ibfk_1")
+  student_answers student_answers[]
+
+  @@index([quiz_id], map: "quiz_id")
+}
+
+model quizzes {
+  id              Int               @id @default(autoincrement())
+  title           String            @db.VarChar(100)
+  description     String?           @db.Text
+  teacher_id      Int?
+  questions       questions[]
+  users           users?            @relation(fields: [teacher_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "quizzes_ibfk_1")
+  student_quizzes student_quizzes[]
+
+  @@index([teacher_id], map: "teacher_id")
+}
+
+model student_answers {
+  id              Int              @id @default(autoincrement())
+  student_quiz_id Int?
+  question_id     Int?
+  option_id       Int?
+  student_quizzes student_quizzes? @relation(fields: [student_quiz_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "student_answers_ibfk_1")
+  questions       questions?       @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "student_answers_ibfk_2")
+  options         options?         @relation(fields: [option_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "student_answers_ibfk_3")
+
+  @@index([option_id], map: "option_id")
+  @@index([question_id], map: "question_id")
+  @@index([student_quiz_id], map: "student_quiz_id")
+}
+
+model student_quizzes {
+  id              Int               @id @default(autoincrement())
+  student_id      Int?
+  quiz_id         Int?
+  score           Int?
+  student_answers student_answers[]
+  users           users?            @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "student_quizzes_ibfk_1")
+  quizzes         quizzes?          @relation(fields: [quiz_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "student_quizzes_ibfk_2")
+
+  @@index([quiz_id], map: "quiz_id")
+  @@index([student_id], map: "student_id")
+}
+
+model users {
+  id              Int               @id @default(autoincrement())
+  username        String            @db.VarChar(50)
+  email           String            @db.VarChar(100)
+  password        String            @db.VarChar(255)
+  role            users_role
+  quizzes         quizzes[]
+  student_quizzes student_quizzes[]
+}
+
+enum users_role {
+  teacher
+  student
+}
